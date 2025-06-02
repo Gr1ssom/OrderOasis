@@ -1,20 +1,35 @@
 import React, { useEffect, useState } from "react";
 import api from "../api";
 
+// Helper to get today’s UTC ISO string
+function getTodayUTCISO() {
+  return new Date().toISOString().split('.')[0] + 'Z';
+}
+
 export default function OrdersList({ onSelect }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const updated_at_from = "1970-01-01T00:00:00Z";
+    const updated_at_to = getTodayUTCISO();
+    const url = `/shipping-orders?updated_at_from=${encodeURIComponent(updated_at_from)}&updated_at_to=${encodeURIComponent(updated_at_to)}`;
     api
-      .get("/shipping-orders?updated_at_from=1970-04-20T22:04:50Z&updated_at_to=2025-05-28T22:04:50Z")
-      .then((res) => setOrders(res.data.orders))
-      .catch(() => alert("Error loading orders"))
+      .get(url)
+      .then((res) => {
+        console.log("RAW API RESPONSE:", res.data); // <--- Debug log
+        // This assumes res.data.orders. Adjust as needed based on the log output.
+        setOrders(res.data.orders);
+      })
+      .catch((err) => {
+        alert("Error loading orders");
+        console.error("API ERROR:", err);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div>Loading orders...</div>;
-  if (!orders.length) return <div>No shipping orders found.</div>;
+  if (!orders || !orders.length) return <div>No shipping orders found.</div>;
 
   return (
     <div>
